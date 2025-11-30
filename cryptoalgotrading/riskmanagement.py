@@ -27,13 +27,17 @@ class Bittrex:
         # parser do get_balances
         return self.conn.get_balances()
 
+    def get_market_summaries(self):
+        """Get market summaries from underlying Bittrex connection."""
+        return self.conn.get_market_summaries()
+
     def get_coin_balance(self, coin):
         return (
             self.conn.get_balance(coin)["result"]["Available"],
             self.conn.get_balance(coin)["result"]["Pending"],
         )
 
-    def buy(self, coin, amount, price):
+    def buy(self, coin: str, amount: float, price: float) -> tuple[bool, list | str]:
         """
         Method to buy coins.
         :param coin: coin to buy
@@ -78,17 +82,23 @@ class Bittrex:
             # Insufficient funds.
             return False, "Cash under Minimum limit."
 
-    def sell(self, coin, quantity, rate):
-
+    def sell(self, coin: str, quantity: float, rate: float) -> tuple[bool, bool]:
+        """
+        Sell coins using sell limit.
+        :param coin: coin to sell
+        :param quantity: quantity to sell
+        :param rate: price rate
+        :return: tuple with success status
+        """
         self.conn.sell_limit(coin, quantity, rate)
-        return True
+        return True, True
 
 
 class Binance:
 
     def __init__(self):
         # connects to Binance through Binance lib.
-        self.conn = aux.Binance(var.bnc_ky, var.bnc_sct)
+        self.conn = aux.Binance(var.bnb_ky, var.bnb_sct)
         # min_limit represents minimum value account needs, in order to remain working.
         self.min_limit = {"USDT": var.usdt_min, "BTC": var.btc_min}
         # Binance has limitations in float precision.
@@ -272,7 +282,7 @@ class Binance:
 
         self.refresh_balance()
 
-        for coin in self.assets():
+        for coin in self.assets:
             if self.assets[coin]["available"] > 0:
                 self.sell(coin)
         return True

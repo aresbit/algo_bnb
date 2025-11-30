@@ -18,6 +18,7 @@ from datetime import datetime
 from functools import partial
 from multiprocessing import Manager, Pool
 from time import ctime, sleep, time
+from typing import Any
 from warnings import simplefilter
 
 import pandas as pd
@@ -53,7 +54,7 @@ cached = manager.dict()
 simplefilter(action="ignore", category=FutureWarning)
 
 
-def signal_handler():
+def signal_handler(signum, frame):
     log.info("You pressed Ctrl+C!")
     sys.exit(0)
 
@@ -123,7 +124,7 @@ def tick_by_tick(
     emas=var.default_emas,
     refresh_interval=1,
     from_file=True,
-    # plot=False
+    plot=False,
 ):
     """
     Simulates a working bot, in realtime or in faster speed,
@@ -313,10 +314,14 @@ def realtime(
     if not isinstance(exit_funcs, list):
         exit_funcs = [exit_funcs]
 
-    portfolio = {}  # Owned coins list.
-    coins = {}
+    portfolio: dict = {}  # Owned coins list.
+    coins: dict = {}
 
-    res_abs = 0
+    res_abs = 0.0
+
+    # Bittrex connection variable - can be simulation or real
+    # Use Any to avoid mypy union issues with different Bittrex classes
+    bt: Any = None
 
     # Bittrex exchange
     if "bittrex" in exchanges:
@@ -371,7 +376,7 @@ def realtime(
     while True:
         start_time = time()
 
-        if "bittrex" in exchanges:
+        if "bittrex" in exchanges and bt is not None:
             markets += bt.get_market_summaries()["result"]
         if "binance" in exchanges:
             markets += bnb.get_ticker()
@@ -462,6 +467,9 @@ def realtime(
 
                             # Bittrex market
                             elif market_name.startswith("BT_"):
+                                if bt is None:
+                                    log.error("Bittrex connection not initialized")
+                                    continue
                                 success, sell_res = bt.sell(
                                     market_name.replace("BT_", ""),
                                     portfolio[market_name]["quantity"],
@@ -560,8 +568,12 @@ def realtime(
 
                             # Bittrex
                             elif market_name.startswith("BT_"):
+                                if bt is None:
+                                    log.error("Bittrex connection not initialized")
+                                    continue
                                 success, ret = bt.buy(
                                     market_name.replace("BT_", ""),
+                                    data.Ask.iloc[-1] * 1.01,
                                     data.Ask.iloc[-1] * 1.01,
                                 )
 

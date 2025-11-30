@@ -19,8 +19,12 @@ class TestAux(unittest.TestCase):
         self.assertEqual(aux.stop_loss(100, 110, 9), True)
 
     def test_check_market_name(self):
-        self.assertEqual(aux.check_market_name("ETH"), "BTC-ETH")
-        self.assertEqual(aux.check_market_name("go"), "BTC-GO")
+        # 默认是binance，所以直接返回原格式
+        self.assertEqual(aux.check_market_name("ETH"), "ETH")
+        self.assertEqual(aux.check_market_name("go"), "GO")
+        # 明确指定bittrex时应该添加BTC-前缀
+        self.assertEqual(aux.check_market_name("ETH", exchange="bittrex"), "BTC-ETH")
+        self.assertEqual(aux.check_market_name("go", exchange="bittrex"), "BTC-GO")
         self.assertEqual(aux.check_market_name("gobtc", exchange="binance"), "GOBTC")
 
     def test_get_time_right(self):
@@ -38,7 +42,7 @@ class TestAux(unittest.TestCase):
         self.assertEqual(aux.beep(), 0)
 
     def test_log(self):
-        self.assertEqual(aux.log("Running unit tests..."), 0)
+        self.assertEqual(aux.log_message("Running unit tests..."), 0)
 
     # def test_connect_db(self):
     #    self.assertEqual()

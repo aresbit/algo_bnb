@@ -13,7 +13,7 @@ import hmac
 import time
 
 try:
-    from urllib import urlencode
+    from urllib import urlencode  # type: ignore
 except ImportError:
     from urllib.parse import urlencode
 import requests
