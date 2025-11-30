@@ -47,13 +47,21 @@
 [![Build Status](https://travis-ci.com/ivopetiz/algotrading.svg?branch=master)](https://travis-ci.com/ivopetiz/algotrading)
 [![Coverage Status](https://coveralls.io/repos/github/ivopetiz/algotrading/badge.svg?branch=master)](https://coveralls.io/github/ivopetiz/algotrading?branch=master)
 
-## Algorithmic trading framework for cryptocurrencies in Python
+## 加密算法交易框架 (Python版)
 
-Algotrading Framework is a repository with tools to build and run working trading bots, backtest strategies, assist on trading, define simple stop losses and trailing stop losses, etc. This framework work with data directly from Crypto exchanges API, from a DB or CSV files. Can be used for data-driven and event-driven systems. Made exclusively for crypto markets for now and written in Python.
+这是一个用于构建和运行加密货币交易机器人、回测策略、辅助交易、定义简单止损和跟踪止损等功能的算法交易框架。该框架可直接从加密货币交易所 API、数据库或 CSV 文件获取数据，适用于数据驱动和事件驱动系统。目前专为加密货币市场开发，使用 Python 编写。
+
+### 主要特性
+
+- **现代化 Python 项目结构** - 采用 pyproject.toml 标准和 PEP 621 规范
+- **快速依赖管理** - 使用 uv 替代传统 pip，提供极速依赖解析
+- **高质量代码** - 集成 ruff (linting)、black (格式化)、mypy (类型检查)
+- **持续集成** - GitHub Actions 自动化测试和代码质量检查
+- **灵活部署** - 支持实时交易、逐笔回测、历史回测三种模式
 
 ---
 
-## Follow this [Quickstart Guide](quickstart_guide.md) if you want to start right away
+## 查看 [快速入门指南](quickstart_guide.md) 立即开始
 
 ---
 
@@ -61,107 +69,138 @@ Algotrading Framework is a repository with tools to build and run working tradin
 
 ---
 
-## Index
+## 目录索引
 
-* [Operating modes](#operating-modes)
-  * [Realtime](#realtime)
-  * [Tick-by-tick](#tick-by-tick)
-  * [Backtest](#backtest)
+* [运行模式](#运行模式)
+  * [实时交易](#实时交易)
+  * [逐笔回测](#逐笔回测)
+  * [历史回测](#历史回测)
 
-* [How to start](#how-to-start)
-  * [Pre Requesites](#pre-requesites)
+* [入门指南](#入门指南)
+  * [环境要求](#环境要求)
 
-  * [Collecting data](#collecting-data)
-    * [Database](#batabase)
-    * [Script](#script)
+  * [数据收集](#数据收集)
+    * [数据库](#数据库)
+    * [脚本](#脚本)
 
-* [Entry functions](#entry-functions)
-  * [cross SMA](#cross-sma)
+* [入场函数](#入场函数)
+  * [SMA交叉策略](#sma交叉策略)
 
-* [Exit functions](#exit-functions)
-  * [cross SMA](#cross-sma)
+* [出场函数](#出场函数)
+  * [SMA交叉策略](#sma交叉策略-1)
 
-* [Plot data](#plot-data)
+* [数据可视化](#数据可视化)
 
-* [Logs](#logs)
+* [日志记录](#日志记录)
 
-* [Examples](#examples)
-  * [Realtime alert for volume increasing](#realtime-alert-for-volume-increasing)
-  * [Backtest a strategy on BTC-DGB pair using SMA](#backtest-a-strategy-on-BTC-DGB-pair-using-sma)
+* [使用示例](#使用示例)
+  * [实时监控成交量翻倍](#实时监控成交量翻倍)
+  * [BTC-DGB对SMA策略回测](#btc-dgb对sma策略回测)
 
-* [Pypy](#pypy)
+* [性能优化](#性能优化)
 
-* [TODO](#todo)
+* [开发计划](#开发计划)
 
-* [Additional info](#additional-info)
+* [附加信息](#附加信息)
 
 ---
 
-## Operating modes
+## 运行模式
 
-Framework has three operating modes:
+框架提供三种运行模式：
 
-* Realtime -- Trades with real data in real time, with real money or in simulation mode.
-* Tick-by-tick -- Testing strategies in real time frames, so user can follow its entries and exits strategies.
-* Backtest -- Backtesting strategies and presenting the results.
+* **实时交易** - 使用真实数据在实时环境中交易，支持真实资金或模拟模式
+* **逐笔回测** - 在实时时间框架中测试策略，用户可以观察入场和出场点
+* **历史回测** - 使用历史数据回测策略并展示结果
 
-### Realtime
+### 实时交易
 
-In realtime, Trading Bot operates in real-time, with live data from exchanges APIs. It doesn't need pre-stored data or DB to work. In this mode, a bot can trade real money, simulate or alert the user when its time to buy or sell, based on entry and exit strategies defined by the user. Can also simulate users strategies and present the results in real-time.
+在实时模式下，交易机器人使用来自交易所 API 的实时数据运行。无需预存数据或数据库即可工作。此模式下，机器人可以使用真实资金交易、模拟交易或提醒用户何时买卖，基于用户定义的入场和出场策略。也可以模拟用户策略并实时展示结果。
 
-### Tick-by-tick
+### 逐笔回测
 
-Tick-by-tick mode allows users to check strategies in a visible timeframe, to better check entries and exit points or to detect strategies faults or new entry and exit points. Use data from CSV files or DB.
+逐笔回测模式允许用户在可见的时间框架内检查策略，更好地观察入场和出场点，或检测策略缺陷以及发现新的入场出场点。使用 CSV 文件或数据库中的数据。
 
-### Backtest
+### 历史回测
 
-Allows users to backtest strategies, with previously stored data. Can also plot trading data showing entry and exit points for implemented strategies.
+允许用户使用预存数据回测策略。还可以绘制交易数据，显示已实施策略的入场和出场点。
 
-## How to start
+## 入门指南
 
-### Pre requisites
+### 环境要求
 
-To get algotrading fully working is necessary to install some packages and Python libs, as IPython, Pandas, Matplotlib, Numpy, Python-Influxdb and Python-tk. 
-On Linux machines these packages could be installed with:
+要完全运行算法交易框架，需要安装一些包和 Python 库，如 IPython、Pandas、Matplotlib、Numpy、Python-Influxdb 和 Python-tk。
+在 Linux 系统上可以通过以下方式安装：
 
+**推荐方式:**
 ```bash
+# 使用 uv 安装依赖 (推荐)
+uv sync
+
+# 或带开发依赖
+uv sync --extra dev
+```
+
+**传统方式:**
+```bash
+# 使用 pip 安装依赖
 pip install -r requirements.txt
 ```
 
-### Collecting data
+### 开发工作流
 
-The first step is to collect data. To get markets data is necessary to run a DB, to get and manage all data or save the data to CSV files. 
-There are two options:
+使用现代化开发工具：
+```bash
+# 代码检查
+uv run ruff check cryptoalgotrading/
 
-* Install and configure a database.
-* Run a script to collect data and save it to CSV files.
+# 代码格式化
+uv run black cryptoalgotrading/
 
-#### Database
+# 类型检查
+uv run mypy cryptoalgotrading/
 
-Trading Bot is ready to operate with InfluxDB, but can work with other databases, with some small changes.
+# 运行测试
+uv run pytest test/
 
-To install, configure and use a InfluxDB database, you can clone this repository:
+# 一键检查所有
+make all
+```
+
+### 数据收集
+
+第一步是收集数据。要获取市场数据，需要运行数据库来管理和存储所有数据，或将数据保存到 CSV 文件中。
+有两种选择：
+
+* 安装和配置数据库
+* 运行脚本收集数据并保存到 CSV 文件
+
+#### 数据库
+
+交易机器人已准备好与 InfluxDB 配合使用，但也可以通过一些小改动与其他数据库一起工作。
+
+要安装、配置和使用 InfluxDB 数据库，您可以克隆此仓库：
 https://github.com/ivopetiz/crypto-database
 
-#### Script
+#### 脚本
 
-If you don't want to install and manage any databases and simply want to get data to CSV files you can use the script in this Gist:
+如果您不想安装和管理任何数据库，只想将数据获取到 CSV 文件中，可以使用此 Gist 中的脚本：
 https://gist.github.com/ivopetiz/051eb8dcef769e655254df21a093831a
 
-*Using a database is the best option, once you can analyse and plot data using DB tools, as Chronograf, and can always extract data to CSV if needed.*
+*使用数据库是最佳选择，因为您可以使用数据库工具（如 Chronograf）分析和绘制数据，并且在需要时始终可以提取数据到 CSV。*
 
-## Entry functions
+## 入场函数
 
-Entry functions aggregate all strategies to enter in a specific market. Once data fill all the requisites to enter a specific market, an action is taken. 
-Users can use one or several functions in the same call, to fill the requisites and enter market/markets. 
-Functions should return *True*, if the available data represent an entry point for the user. If not, the return needs to be *False*.
-<entry.py> should aggregate all users entry functions.
+入场函数聚合所有进入特定市场的策略。一旦数据满足进入特定市场的所有要求，就会执行操作。
+用户可以在同一调用中使用一个或多个函数，来满足要求并进入市场。
+如果可用数据代表用户的入场点，函数应返回 *True*。如果不是，则返回 *False*。
+<entry.py> 应聚合所有用户的入场函数。
 
-### Example
+### 示例
 
-#### cross SMA
+#### SMA交叉策略
 
-Function <cross_smas> will return *True* if first SMA cross the second one. If not will return *False*.
+如果第一个 SMA 上穿第二个 SMA，函数 <cross_smas> 将返回 *True*。如果没有则返回 *False*。
 
 ```python
 def cross_smas(data, smas=[5, 10]):
@@ -177,19 +216,19 @@ def cross_smas(data, smas=[5, 10]):
     return False
 ```
 
-## Exit functions
+## 出场函数
 
-Exit functions have all functions responsible for exit strategies. When a user is in the market, and data met exit criteria, the bot will exit the market. 
-Exit functions can be used with other exit functions, to cover more situations, as used in entry functions. 
-Stop loss and trailing stop loss are also implemented, to exit markets in case of an unexpected price drop. Functions should return *True*, if the available data represent an exit point for the user. If not, the return needs to be *False*.
-<exit.py> should aggregate all users' exit functions.
+出场函数包含所有负责出场策略的函数。当用户在市场内，且数据满足出场标准时，机器人将退出市场。
+出场函数可以与其他出场函数一起使用，以涵盖更多情况，如入场函数中所用。
+还实现了止损和跟踪止损功能，在意外价格下跌的情况下退出市场。如果可用数据代表用户的出场点，函数应返回 *True*。如果不是，返回应为 *False*。
+<exit.py> 应聚合所有用户的出场函数。
 
-Example
+示例
 ---
 
-### cross SMA
+#### SMA交叉策略
 
-Function <cross_smas> will return *True* if first SMA cross the second one. If not will return *False*.
+如果第一个 SMA 下穿第二个 SMA，函数 <cross_smas> 将返回 *True*。如果没有则返回 *False*。
 
 ```python
 def cross_smas(data, smas=[10, 20]):
@@ -205,38 +244,39 @@ def cross_smas(data, smas=[10, 20]):
     return False
 ```
 
-## Plot data
+## 数据可视化
 
-It's possible to plot entry and exit points, among market data, using Matplotlib lib for Python with the option *plot=True* on function call.
+可以使用 Python 的 Matplotlib 库在函数调用时使用 *plot=True* 选项来绘制入场和出场点以及市场数据。
 
-## Log
+## 日志记录
 
-Can log entry and exit points in order to evaluate strategies, presenting P&L for specific markets and total.
+可以记录入场和出场点以评估策略，展示特定市场和总体的盈亏 (P&L)。
 
-## Examples
+## 使用示例
 
-Here are some examples of how to use this framework.
+以下是一些如何使用此框架的示例。
 
-### Realtime alert for volume increasing
+### 实时监控成交量翻倍
 
-To get an alert when a market doubles its volume:
+当市场成交量翻倍时获得警报：
 
 ```python
 from cryptoalgotrading.cryptoalgotrading import realtime
+import pandas as pd
 
 def alert_volume_x2(data):
-    if pd.vol.iloc[-1] > pd.vol.iloc[-2]*2:
+    if data.volume.iloc[-1] > data.volume.iloc[-2]*2:
         return True
     return False
 
 realtime([], alert_volume_x2, interval='10m')
 ```
 
-*alert_volume_x2* checks the value of actual market volume and compare it with the last time frame volume value, alerting user when actual market volume is bigger than last time frame volume value multiplied by 2. Can add functions live on IPython for example of add them to entry and exit python files.
+*alert_volume_x2* 检查实际市场成交量值并与上一时间框架的成交量值进行比较，当实际市场成交量大于上一时间框架成交量值的2倍时提醒用户。可以在 IPython 或 Jupyter Notebook 中实时添加函数。
 
-### Backtest a strategy on BTC-DGB pair using SMA
+### BTC-DGB对SMA策略回测
 
-To backtest a cross simple moving average strategy in a specific market and plot the entry points:
+在特定市场回测简单移动平均交叉策略并绘制入场点：
 
 ```python
 from cryptoalgotrading.cryptoalgotrading import backtest
@@ -245,37 +285,40 @@ import cryptoalgotrading.entry as entry
 backtest(["BTC-XRP"], entry.cross_smas, smas=[15,40], interval='10m', from_file=True, plot=True)
 ```
 
-Based on market data available for BTC_XRP pair, code above can present an output like this:
+基于 BTC_XRP 对的市场数据，上述代码可以产生如下输出：
 
-![testing strategy on BTC-XRP pair data.](figs/fig2_xrp.png)
+![在BTC-XRP对数据上测试策略](figs/fig2_xrp.png)
 
-The figure has three charts. The chart on top presents on top BTC-XRP data from a certain period, with its Bollinger bands and 3 SMA lines. Green points represent the entry points for the defined strategy. In the middle is a chart representing volume data and at the bottom is represented the number of selling orders among time. All these fields and charts are configurable on *plot* function.
+该图包含三个图表。顶部图表显示特定时期的 BTC-XRP 数据，带有布林带和3条 SMA 线。绿点表示定义策略的入场点。中间是成交量数据图表，底部表示随时间变化的卖单数量。所有这些字段和图表都可以在 *plot* 函数中配置。
 
-Can also add exit points by adding an exit function or functions to backtest function. 
-It is possible to enter multiple entries and exit functions to backtest, to define different entry and exit positions.
+还可以通过向回测函数添加出场函数或函数来添加出场点。
+可以输入多个入场和出场函数进行回测，以定义不同的入场和出场位置。
 
-Both functions are available on entry.py and exit.py as example.
+这两个函数在 entry.py 和 exit.py 中作为示例提供。
 
-In finance.py are some functions which could be useful to implement some strategies.
+在 finance.py 中有一些可能有助于实现策略的函数。
 
-## Pypy
+## 性能优化
 
-This Crypto AlgoTrading Framework can be used with Pypy, but the results will not be great, during the use of Pandas and Numpy libs.
+此加密货币算法交易框架可与 PyPy 一起使用，但由于使用了 Pandas 和 Numpy 库，效果可能不是最佳。推荐使用 Python 3.12+ 以获得最佳性能。
 
-## TODO
+## 开发计划
 
-* [x] Python 3 implementation
-* [ ] Cython version
-* [ ] Pure Python for Pypy (without Pandas and Numpy dependency)
+* [x] Python 3 实现与现代化升级
+* [x] 现代化构建系统 (pyproject.toml)
+* [x] 集成代码质量工具 (ruff, black, mypy)
+* [x] GitHub Actions CI/CD
+* [ ] Cython 版本
+* [ ] 纯 Python For PyPy (无 Pandas 和 Numpy 依赖)
 
-## Additional Info
+## 附加信息
 
-API Key is just needed in case of buy/sell operations. For backtest, tick-by-tick and realtime alert implementations API Key can be left empty.
+API 密钥仅在买卖操作时需要。对于回测、逐笔回测和实时监控实现，API 密钥可以留空。
 
-Buy and sell options are commented and should only be used if you know what you are doing.
+买卖选项已被注释，仅在您了解操作内容时才能使用。
 
-If you are interested in using this bot and don't have an account on Binance Exchange yet, please help me, creating  an account through my referral code here: https://accounts.binance.com/en/register?ref=17181609 
+如果您有兴趣使用此机器人但尚未在 Binance 交易所开立账户，请通过我的推荐链接创建账户以支持项目：https://accounts.binance.com/en/register?ref=17181609
 
 ---
 
-<p align="center">USE THIS AT YOUR OWN RISK.</p>
+<p align="center">使用此软件的风险由您自行承担。</p>
