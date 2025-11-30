@@ -3,44 +3,48 @@ aux.py
 
 Aux functions needed to do some data manipulation, plot data, etc.
 """
+
+import logging as log
 import sys
-from os import listdir, path, environ
-import matplotlib as mpl
-from subprocess import Popen, PIPE
-from numpy import isnan
-from pandas import read_csv, read_hdf, DataFrame
-from time import time, localtime
 from datetime import datetime, timedelta
+from multiprocessing import cpu_count
+from os import environ, listdir, path
+from subprocess import PIPE, Popen
+from time import localtime, time
+
+import matplotlib as mpl
+import matplotlib.pylab as plt
+from binance.client import Client as Binance
+from influxdb import InfluxDBClient
+from numpy import isnan
+from pandas import DataFrame, read_csv, read_hdf
+from plyer import notification
+
 import cryptoalgotrading.var as var
 from cryptoalgotrading.finance import bollinger_bands
 from cryptoalgotrading.lib_bittrex import Bittrex
-from influxdb import InfluxDBClient
-from binance.client import Client as Binance
-from multiprocessing import cpu_count
-import logging as log
-from plyer import notification
 
-if environ.get('DISPLAY', '') == '':
+if environ.get("DISPLAY", "") == "":
     print("No display found. Using non-interactive Agg backend")
-    mpl.use('Agg')
+    mpl.use("Agg")
 
-mpl.rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
+mpl.rc("font", **{"family": "sans-serif", "sans-serif": ["Helvetica"]})
 # for Palatino and other serif fonts use:
 # rc('font',**{'family':'serif','serif':['Palatino']})
-mpl.rc('text', usetex=True)
-mpl.rcParams['text.usetex'] = False
-
-import matplotlib.pylab as plt
+mpl.rc("text", usetex=True)
+mpl.rcParams["text.usetex"] = False
 
 # plt.ion()
 
 # plt.style.use('ggplot')
 
 # Initiates log file.
-log.basicConfig(filename=var.LOG_FILENAME,
-                format='%(asctime)s - %(message)s',
-                datefmt='%d/%m/%Y %H:%M:%S',
-                level=log.INFO)
+log.basicConfig(
+    filename=var.LOG_FILENAME,
+    format="%(asctime)s - %(message)s",
+    datefmt="%d/%m/%Y %H:%M:%S",
+    level=log.INFO,
+)
 
 
 # Decorators
@@ -54,7 +58,7 @@ def timeit(method):
         result = method(*args, **kw)
         te = time()
 
-        log.debug('Duration: %2.2f sec' % (te - ts))
+        log.debug("Duration: %2.2f sec" % (te - ts))
         return result
 
     return timed
@@ -95,11 +99,9 @@ def connect_db():
 
     # returning InfluxDBClient object.
     try:
-        conn = InfluxDBClient(var.db_host,
-                              var.db_port,
-                              var.db_user,
-                              var.db_password,
-                              var.db_name)
+        conn = InfluxDBClient(
+            var.db_host, var.db_port, var.db_user, var.db_password, var.db_name
+        )
 
     except Exception as e:
         log.exception(f"Unable to connect to DB: {e}")
@@ -108,8 +110,7 @@ def connect_db():
     return conn
 
 
-def get_markets_list(base='BTC',
-                     exchange=var.default_exchange):
+def get_markets_list(base="BTC", exchange=var.default_exchange):
     """
     Gets all coins from a certain market.
 
@@ -124,25 +125,31 @@ def get_markets_list(base='BTC',
 
     ret = False
 
-    if exchange == 'bittrex':
+    if exchange == "bittrex":
         try:
-            bt = Bittrex('', '')
+            bt = Bittrex("", "")
             log.debug("Connected to Bittrex.")
-            ret = [i['MarketName'] for i in bt.get_markets()['result'] if i['MarketName'].startswith(base)]
+            ret = [
+                i["MarketName"]
+                for i in bt.get_markets()["result"]
+                if i["MarketName"].startswith(base)
+            ]
         except Exception as e:
             log.exception(f"Unable to connect to Bittrex - {e}")
 
-    elif exchange == 'binance':
+    elif exchange == "binance":
         try:
-            bnb = Binance('', '')
+            bnb = Binance("", "")
             log.debug("Connected to Binance.")
-            ret = [i['symbol'] for i in bnb.get_all_tickers() if i['symbol'].endswith(base)]
+            ret = [
+                i["symbol"] for i in bnb.get_all_tickers() if i["symbol"].endswith(base)
+            ]
         except Exception as e:
             log.exception(f"Unable to connect to Binance - {e}")
     return ret
 
 
-def get_markets_on_files(interval, base='BTC'):
+def get_markets_on_files(interval, base="BTC"):
     """
     Gets all coins from a certain market, available on files.
 
@@ -158,17 +165,19 @@ def get_markets_on_files(interval, base='BTC'):
 
     for file_ in listdir(f"{var.data_dir}/hist-{interval}"):
         if file_.startswith(base):
-            markets_list.append(file_.split('.')[0])
+            markets_list.append(file_.split(".")[0])
 
     return markets_list
 
 
 # @dropnan
-def get_historical_data(market,
-                        interval=var.default_interval,
-                        init_date=0,
-                        end_date=0,
-                        exchange=var.default_exchange):
+def get_historical_data(
+    market,
+    interval=var.default_interval,
+    init_date=0,
+    end_date=0,
+    exchange=var.default_exchange,
+):
     """
     Gets all historical data stored on DB, from a certain market.
 
@@ -187,41 +196,53 @@ def get_historical_data(market,
     verified_market = check_market_name(market, exchange)
 
     if not init_date:
-        init_date = '2018-02-02 00:00:00'
+        init_date = "2018-02-02 00:00:00"
     else:
         init_date = get_time_right(init_date)
 
-    time = "time > \'" + init_date + "\'"
+    time = "time > '" + init_date + "'"
 
     if end_date:
         end_date = get_time_right(end_date)
-        time += " AND time < \'" + end_date + "\'"
+        time += " AND time < '" + end_date + "'"
 
     # Gets data from Bittrex exchange.
-    if exchange == 'bittrex':
-        command = "SELECT last(Last) AS Last," + \
-                  " last(BaseVolume) AS BaseVolume," + \
-                  " last(High) AS High," + \
-                  " last(Low) AS Low," + \
-                  " last(Ask) AS Ask," + \
-                  " last(Bid) AS Bid," + \
-                  " last(OpenBuyOrders) AS OpenBuy," + \
-                  " last(OpenSellOrders) AS OpenSell " + \
-                  "FROM bittrex WHERE " + time + \
-                  " AND MarketName='" + verified_market + \
-                  "' GROUP BY time(" + interval + ")"
+    if exchange == "bittrex":
+        command = (
+            "SELECT last(Last) AS Last,"
+            + " last(BaseVolume) AS BaseVolume,"
+            + " last(High) AS High,"
+            + " last(Low) AS Low,"
+            + " last(Ask) AS Ask,"
+            + " last(Bid) AS Bid,"
+            + " last(OpenBuyOrders) AS OpenBuy,"
+            + " last(OpenSellOrders) AS OpenSell "
+            + "FROM bittrex WHERE "
+            + time
+            + " AND MarketName='"
+            + verified_market
+            + "' GROUP BY time("
+            + interval
+            + ")"
+        )
 
     # Gets data from Binance exchange.
-    elif exchange == 'binance':
-        command = "SELECT last(Last) AS Last," + \
-                  " last(BaseVolume) AS BaseVolume," + \
-                  " last(High) AS High," + \
-                  " last(Low) AS Low," + \
-                  " last(Ask) AS Ask," + \
-                  " last(Bid) AS Bid " + \
-                  "FROM binance WHERE " + time + \
-                  " AND MarketName='" + verified_market + \
-                  "' GROUP BY time(" + interval + ")"
+    elif exchange == "binance":
+        command = (
+            "SELECT last(Last) AS Last,"
+            + " last(BaseVolume) AS BaseVolume,"
+            + " last(High) AS High,"
+            + " last(Low) AS Low,"
+            + " last(Ask) AS Ask,"
+            + " last(Bid) AS Bid "
+            + "FROM binance WHERE "
+            + time
+            + " AND MarketName='"
+            + verified_market
+            + "' GROUP BY time("
+            + interval
+            + ")"
+        )
 
     db_client = connect_db()
 
@@ -233,11 +254,13 @@ def get_historical_data(market,
     return detect_init(DataFrame(list(res.get_points(measurement=exchange))))
 
 
-def get_last_data(market,
-                  last='24',
-                  interval=var.default_interval,
-                  exchange=var.default_exchange,
-                  db_client=0):
+def get_last_data(
+    market,
+    last="24",
+    interval=var.default_interval,
+    exchange=var.default_exchange,
+    db_client=0,
+):
     """
     Gets last data from DB.
 
@@ -252,18 +275,18 @@ def get_last_data(market,
     - market data in pandas.DataFrame.
     """
 
-    end_date = 'now()'
+    end_date = "now()"
 
     # date and time format> 2018-02-02 00:00:00
-    start_date = format(datetime.now() -
-                        timedelta(hours=last),
-                        '%Y-%m-%d %H:%M:%S')
+    start_date = format(datetime.now() - timedelta(hours=last), "%Y-%m-%d %H:%M:%S")
 
-    return get_historical_data(market,
-                               interval=interval,
-                               init_date=start_date,
-                               end_date=end_date,
-                               exchange=exchange)
+    return get_historical_data(
+        market,
+        interval=interval,
+        init_date=start_date,
+        end_date=end_date,
+        exchange=exchange,
+    )
 
 
 def detect_init(data):
@@ -276,20 +299,22 @@ def detect_init(data):
     for i in range(len(data)):
         # TODO remove numpy lib and use other method to detect NaN.
         if not isnan(data.Last.iloc[i]):
-            return data[i:len(data)]
+            return data[i : len(data)]
 
 
-def plot_data(data,
-              name='',
-              date=None,
-              smas=var.default_smas,
-              emas=var.default_emas,
-              entry_points=None,
-              exit_points=None,
-              to_file=False,
-              show_smas=False,
-              show_emas=False,
-              show_bbands=False):
+def plot_data(
+    data,
+    name="",
+    date=None,
+    smas=var.default_smas,
+    emas=var.default_emas,
+    entry_points=None,
+    exit_points=None,
+    to_file=False,
+    show_smas=False,
+    show_emas=False,
+    show_bbands=False,
+):
     """
     Plots selected data.
     entry_points is a tuple of lists: (entry_points_x,entry_points_y)
@@ -301,12 +326,11 @@ def plot_data(data,
         date = [0, 0]
     if date != [0, 0]:
         if len(data) != date[1] - date[0]:
-            data = data[date[0]:date[1]]
+            data = data[date[0] : date[1]]
 
-    f, (ax1, ax2, ax3) = plt.subplots(3,
-                                      sharex='all',
-                                      figsize=(9, 4),
-                                      gridspec_kw={'height_ratios': [3, 1, 1]})
+    f, (ax1, ax2, ax3) = plt.subplots(
+        3, sharex="all", figsize=(9, 4), gridspec_kw={"height_ratios": [3, 1, 1]}
+    )
 
     ax1.grid(True)
     ax2.grid(True)
@@ -319,15 +343,15 @@ def plot_data(data,
         end_date = date[1]
 
     x = range(date[0], end_date)
-    ax1.plot(x, data.Last, color='black', linewidth=1, alpha=0.65)
+    ax1.plot(x, data.Last, color="black", linewidth=1, alpha=0.65)
 
     if show_bbands:
         bb_upper, bb_lower, bb_sma = bollinger_bands(data.Last, 10, 2)
         # ax1.plot(x, bb_upper, color='red', linestyle='none', linewidth=1)
         # ax1.plot(x, bb_lower, color='green', linestyle='none', linewidth=1)
 
-        ax1.fill_between(x, bb_sma, bb_upper, color='green', alpha=0.3)
-        ax1.fill_between(x, bb_lower, bb_sma, color='red', alpha=0.3)
+        ax1.fill_between(x, bb_sma, bb_upper, color="green", alpha=0.3)
+        ax1.fill_between(x, bb_lower, bb_sma, color="red", alpha=0.3)
 
     if show_smas:
         for sma in smas:
@@ -338,22 +362,25 @@ def plot_data(data,
             ax1.plot(x, data.Last.ewm(ema).mean())
 
     if entry_points:
-        ax1.plot(entry_points[0],
-                 entry_points[1],
-                 marker='o',
-                 linestyle='None',
-                 color='green',
-                 alpha=0.55)
+        ax1.plot(
+            entry_points[0],
+            entry_points[1],
+            marker="o",
+            linestyle="None",
+            color="green",
+            alpha=0.55,
+        )
     if exit_points:
-        ax1.plot(exit_points[0],
-                 exit_points[1],
-                 marker='o',
-                 linestyle='None',
-                 color='red',
-                 alpha=0.45)
-    ax2.set_ylim((data.BaseVolume.min() - 1,
-                  data.BaseVolume.max() + 1))
-    ax2.bar(x, data.BaseVolume.iloc[:], 1, color='black', alpha=0.55)
+        ax1.plot(
+            exit_points[0],
+            exit_points[1],
+            marker="o",
+            linestyle="None",
+            color="red",
+            alpha=0.45,
+        )
+    ax2.set_ylim((data.BaseVolume.min() - 1, data.BaseVolume.max() + 1))
+    ax2.bar(x, data.BaseVolume.iloc[:], 1, color="black", alpha=0.55)
 
     try:
         ax3.plot(x, data.OpenSell.iloc[:])
@@ -365,20 +392,22 @@ def plot_data(data,
     f.subplots_adjust(hspace=0)
     if to_file:
         if not name:
-            name = 'fig_test' + str(time())
-        f.savefig(f"{var.fig_dir}{name}-{str(time())}.pdf", bbox_inches='tight')
+            name = "fig_test" + str(time())
+        f.savefig(f"{var.fig_dir}{name}-{str(time())}.pdf", bbox_inches="tight")
         plt.close(f)
 
     return True
 
 
-def get_histdata_to_file(markets=None,
-                         interval=var.default_interval,
-                         date_=None,
-                         base_market='BTC',
-                         exchange=var.default_exchange,
-                         file_name=None,
-                         filetype='csv'):
+def get_histdata_to_file(
+    markets=None,
+    interval=var.default_interval,
+    date_=None,
+    base_market="BTC",
+    exchange=var.default_exchange,
+    file_name=None,
+    filetype="csv",
+):
     """
     Gets data from DB to file.
     Prevents excess of DB accesses.
@@ -403,7 +432,8 @@ def get_histdata_to_file(markets=None,
 
     if date_ is None:
         date_ = [0, 0]
-    if isinstance(markets, str): markets = [markets]
+    if isinstance(markets, str):
+        markets = [markets]
 
     if not markets:
         markets = get_markets_list(base_market, exchange)
@@ -412,28 +442,33 @@ def get_histdata_to_file(markets=None,
         verified_market = check_market_name(market, exchange=exchange)
         log.debug(verified_market)
 
-        data_ = get_historical_data(verified_market,
-                                    interval=interval,
-                                    init_date=date_[0],
-                                    end_date=date_[1],
-                                    exchange=exchange)
+        data_ = get_historical_data(
+            verified_market,
+            interval=interval,
+            init_date=date_[0],
+            end_date=date_[1],
+            exchange=exchange,
+        )
 
         if not file_name:
-            file_name = var.data_dir + '/hist-' + \
-                        interval + '/' + \
-                        verified_market
-        file_name += '.'
+            file_name = var.data_dir + "/hist-" + interval + "/" + verified_market
+        file_name += "."
 
         if not isinstance(data_, DataFrame):
             log.error("Unable to get data")
             return False
 
-        if filetype == 'csv':
+        if filetype == "csv":
             data_.to_csv(f"{file_name}{filetype}")
-        elif filetype == 'hdf':
-            data_.to_hdf(f"{file_name}{filetype}", 'data',
-                         mode='w', format='f',
-                         complevel=9, complib='bzip2')
+        elif filetype == "hdf":
+            data_.to_hdf(
+                f"{file_name}{filetype}",
+                "data",
+                mode="w",
+                format="f",
+                complevel=9,
+                complib="bzip2",
+            )
         # TEST
         del data_
         log.info(f"{file_name}{filetype} downloaded.")
@@ -444,10 +479,9 @@ def get_histdata_to_file(markets=None,
 # Use it if you got too much NaN in your data.
 # Will make your func slower!
 @dropnan
-def get_data_from_file(market,
-                       interval=var.default_interval,
-                       exchange=var.default_exchange,
-                       filetype='csv'):
+def get_data_from_file(
+    market, interval=var.default_interval, exchange=var.default_exchange, filetype="csv"
+):
     """
     Gets data from file.
 
@@ -465,30 +499,30 @@ def get_data_from_file(market,
     """
     verified_market = check_market_name(market, exchange=exchange)
 
-    filename_ = var.data_dir + '/hist-' + interval + \
-                '/' + verified_market + '.' + filetype
+    filename_ = (
+        var.data_dir + "/hist-" + interval + "/" + verified_market + "." + filetype
+    )
 
-    if filetype == 'csv':
-        return read_csv(filename_, sep=',', engine='c', index_col=0)  # Optimized.
-    elif filetype == 'hdf':
-        return read_hdf(filename_, 'data')
+    if filetype == "csv":
+        return read_csv(filename_, sep=",", engine="c", index_col=0)  # Optimized.
+    elif filetype == "hdf":
+        return read_hdf(filename_, "data")
     else:
         return 0
 
 
-def check_market_name(market,
-                      exchange=var.default_exchange):
+def check_market_name(market, exchange=var.default_exchange):
     """
     Avoids abbreviations and lower cases failures.
     """
     market = market.upper()
 
-    if exchange == 'bittrex':
-        if '-' in market:  # and len(market) > 5:
+    if exchange == "bittrex":
+        if "-" in market:  # and len(market) > 5:
             return market
-        return 'BTC-' + market
+        return "BTC-" + market
 
-    elif exchange == 'binance':
+    elif exchange == "binance":
         return market
 
 
@@ -512,25 +546,32 @@ def time_to_index(data, _datetime):
 
     for t in _datetime:
 
-        if ' ' in t:
+        if " " in t:
             t_date, t_time = t.split()
         else:
             t_date = t
-            t_time = '00:00'
+            t_time = "00:00"
 
         try:
-            t_day, t_month, t_year = t_date.split('-')
+            t_day, t_month, t_year = t_date.split("-")
         except Exception:
-            t_day, t_month = t_date.split('-')
+            t_day, t_month = t_date.split("-")
             t_year = localtime(time())[0]
 
-        t_hour, t_minute = t_time.split(':')
+        t_hour, t_minute = t_time.split(":")
 
-        dtime.append(str(t_year) + '-' +
-                     str(t_month) + '-' +
-                     str(t_day) + 'T' +
-                     str(t_hour) + ':' +
-                     str(t_minute) + ':00Z')
+        dtime.append(
+            str(t_year)
+            + "-"
+            + str(t_month)
+            + "-"
+            + str(t_day)
+            + "T"
+            + str(t_hour)
+            + ":"
+            + str(t_minute)
+            + ":00Z"
+        )
 
     try:
         d = data[(data.time > dtime[0]) & (data.time < dtime[1])]
@@ -542,38 +583,32 @@ def time_to_index(data, _datetime):
 
 
 def get_time_right(date_n_time):
-    if ' ' in date_n_time:
+    if " " in date_n_time:
         t_date, t_time = date_n_time.split()
     else:
         t_date = date_n_time
-        t_time = '00:00'
+        t_time = "00:00"
 
-    if '-' in date_n_time:
+    if "-" in date_n_time:
         try:
-            t_day, t_month, t_year = t_date.split('-')
+            t_day, t_month, t_year = t_date.split("-")
         except Exception:
-            t_day, t_month = t_date.split('-')
+            t_day, t_month = t_date.split("-")
             t_year = str(localtime()[0])
 
-    elif '/' in date_n_time:
+    elif "/" in date_n_time:
         try:
-            t_day, t_month, t_year = t_date.split('/')
+            t_day, t_month, t_year = t_date.split("/")
         except Exception:
-            t_day, t_month = t_date.split('/')
+            t_day, t_month = t_date.split("/")
             t_year = str(localtime()[0])
 
-    t_hour, t_minute = t_time.split(':')
+    t_hour, t_minute = t_time.split(":")
 
-    return t_year + '-' + \
-           t_month + '-' + \
-           t_day + 'T' + \
-           t_hour + ':' + \
-           t_minute + ':00Z'
+    return t_year + "-" + t_month + "-" + t_day + "T" + t_hour + ":" + t_minute + ":00Z"
 
 
-def trailing_stop_loss(last,
-                       higher,
-                       percentage=var.trailing_loss_prcnt):
+def trailing_stop_loss(last, higher, percentage=var.trailing_loss_prcnt):
     """
     Trailing stop loss function.
 
@@ -591,16 +626,14 @@ def trailing_stop_loss(last,
     return False
 
 
-def stop_loss(last,
-              entry_point_x,
-              percentage=var.stop_loss_prcnt):
+def stop_loss(last, entry_point_x, percentage=var.stop_loss_prcnt):
     """
     Stop loss function.
-        
+
     Receives structure with:
         - Last price.
         - Entry point x.
-    
+
     Returns true when triggered.
     """
 
@@ -645,9 +678,11 @@ def beep(duration=0.5):
     Used to alert for possible manual entry or exit.
     """
     freq = 440  # Hz
-    
+
     # Play need to be installed.
-    _, err = run_command(f"play --no-show-progress --null --channels 1 synth {duration} sine {freq}")
+    _, err = run_command(
+        f"play --no-show-progress --null --channels 1 synth {duration} sine {freq}"
+    )
 
     return err
 
@@ -659,25 +694,25 @@ def desktop_notification(content: dict):
     """
     # TODO - add timer
 
-    icon = ''
+    icon = ""
 
     if var.desktop_cool_mode:
-        if content['type'] == 'P&L':
-            if content['profit'] > 0:
+        if content["type"] == "P&L":
+            if content["profit"] > 0:
                 icon = var.img_profit
             else:
                 icon = var.img_loss
 
     notification.notify(
-        title = content['title'],
-        message = content['message'],
-        app_name = 'CAT',
-        app_icon = icon
+        title=content["title"],
+        message=content["message"],
+        app_name="CAT",
+        app_icon=icon,
     )
     return 0
 
 
-def manage_files(markets, interval='1m'):
+def manage_files(markets, interval="1m"):
     """
     Manage market files in order to improve framework performance.
     """
@@ -694,7 +729,7 @@ def manage_files(markets, interval='1m'):
     for f in listdir(f"{var.data_dir}/hist-{interval}"):
         for market in markets_name:
             if f.startswith(market):
-                all_files.append(f.split('.')[0])
+                all_files.append(f.split(".")[0])
                 continue
 
     return all_files
@@ -712,7 +747,7 @@ def file_lines(filename):
 
     buf = read_f(buf_size)
     while buf:
-        lines += buf.count('\n')
+        lines += buf.count("\n")
         buf = read_f(buf_size)
 
     f.close()
@@ -725,15 +760,17 @@ def binance2btrx(_data):
     Converts Binance data structure into Bittrex model.
     """
 
-    new_data = {'MarketName': str(_data['symbol']),
-                'Ask': float(_data['askPrice']),
-                'BaseVolume': float(_data['quoteVolume']),
-                'Bid': float(_data['bidPrice']),
-                'High': float(_data['highPrice']),
-                'Last': float(_data['lastPrice']),
-                'Low': float(_data['lowPrice']),
-                'Volume': float(_data['volume']),
-                'Count': float(_data['count'])}
+    new_data = {
+        "MarketName": str(_data["symbol"]),
+        "Ask": float(_data["askPrice"]),
+        "BaseVolume": float(_data["quoteVolume"]),
+        "Bid": float(_data["bidPrice"]),
+        "High": float(_data["highPrice"]),
+        "Last": float(_data["lastPrice"]),
+        "Low": float(_data["lowPrice"]),
+        "Volume": float(_data["volume"]),
+        "Count": float(_data["count"]),
+    }
 
     return new_data
 
@@ -742,11 +779,7 @@ def run_command(cmd):
     """
     Run a command in terminal through Python
     """
-    process = Popen(cmd.split(),
-                    stdout=PIPE,
-                    stderr=PIPE)
+    process = Popen(cmd.split(), stdout=PIPE, stderr=PIPE)
     stdout, _ = process.communicate()
-    out = stdout.decode("utf-8").replace('\t', '')\
-                                .replace(': ', ':')\
-                                .splitlines()
+    out = stdout.decode("utf-8").replace("\t", "").replace(": ", ":").splitlines()
     return out, process.returncode

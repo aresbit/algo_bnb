@@ -1,5 +1,47 @@
 # Crypto AlgoTrading Framework
 
+加密算法交易项目已经成功现代化重构，完成了以下关键更新：
+
+  🚀 现代化特性
+
+  - 🔨 Python 构建系统: 从 setup.py 迁移到现代的 pyproject.toml，使用 PEP 621 标准
+  - 📦 依赖管理: 使用 uv 替代传统的 pip + virtualenv，提供更快的依赖解析和安装
+  - 🧹 代码质量: 集成 ruff 进行代码检查、格式化和导入排序
+  - 🎯 类型检查: 配置 mypy 进行静态类型分析
+  - 🧪 自动化测试: 使用 pytest 和现代化测试配置
+  - 🔧 开发工作流: 添加了 Makefile 和 GitHub Actions CI/CD
+
+  📋 更新详情
+
+  Python 版本支持:
+  - 支持 Python 3.12 和 3.13 (由于 numpy 兼容性，暂不支持 3.14)
+
+  关键依赖更新:
+  - numpy: 1.22 → 2.3.5
+  - pandas: 1.2 → 2.3.3
+  - matplotlib: 3.3.4 → 3.10.7
+  - requests: 2.25.1 → 2.32.5
+  - python-binance: 0.7.1 → 1.0.32
+
+  代码质量改进:
+  - 移除 Python 2 兼容性代码
+  - 修正了可变默认参数问题
+  - 修复了重复函数定义
+  - 现代化了导入结构
+  - 统一了代码格式
+
+  新增开发工具:
+  - UV 包管理器配置
+  - Ruff 代码检查器
+  - Black 代码格式化
+  - MyPy 类型检查
+  - Pre-commit hooks
+  - GitHub Actions CI/CD
+  - 现代化 Makefile
+
+  项目现在具备了现代化的 Python 开发工作流，可以通过简单的命令运行测试、检查代码质量和构建包！
+  
+
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/dce868084d344fafa498bf3ff7bf2d81)](https://www.codacy.com/gh/ivopetiz/algotrading/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ivopetiz/algotrading&amp;utm_campaign=Badge_Grade)
 [![Codacy Security Scan](https://github.com/ivopetiz/algotrading/actions/workflows/codacy.yml/badge.svg)](https://github.com/ivopetiz/algotrading/actions/workflows/codacy.yml)
 [![Build Status](https://travis-ci.com/ivopetiz/algotrading.svg?branch=master)](https://travis-ci.com/ivopetiz/algotrading)

@@ -1,40 +1,56 @@
 """
-   lib_bittrex.py
+lib_bittrex.py
 
-   See https://bittrex.com/Home/Api
+See https://bittrex.com/Home/Api
 
-   Thanks to ericsomdahl.
+Thanks to ericsomdahl.
 
-   Full repo available in https://github.com/ericsomdahl/python-bittrex
+Full repo available in https://github.com/ericsomdahl/python-bittrex
 """
 
-import time
-import hmac
 import hashlib
+import hmac
+import time
+
 try:
     from urllib import urlencode
 except ImportError:
     from urllib.parse import urlencode
 import requests
 
-BUY_ORDERBOOK = 'buy'
-SELL_ORDERBOOK = 'sell'
-BOTH_ORDERBOOK = 'both'
+BUY_ORDERBOOK = "buy"
+SELL_ORDERBOOK = "sell"
+BOTH_ORDERBOOK = "both"
 
-BASE_URL = 'https://bittrex.com/api/v1.1/%s/'
+BASE_URL = "https://bittrex.com/api/v1.1/%s/"
 
-MARKET_SET = {'getopenorders', 'cancel', 'sellmarket', 'selllimit', 'buymarket', 'buylimit'}
+MARKET_SET = {
+    "getopenorders",
+    "cancel",
+    "sellmarket",
+    "selllimit",
+    "buymarket",
+    "buylimit",
+}
 
-ACCOUNT_SET = {'getbalances', 'getbalance', 'getdepositaddress', 'withdraw', 'getorderhistory', 'getorder'}
+ACCOUNT_SET = {
+    "getbalances",
+    "getbalance",
+    "getdepositaddress",
+    "withdraw",
+    "getorderhistory",
+    "getorder",
+}
 
 
-class Bittrex(object):
+class Bittrex:
     """
     Used for requesting Bittrex with API key and API secret
     """
+
     def __init__(self, api_key, api_secret):
-        self.api_key = str(api_key) if api_key is not None else ''
-        self.api_secret = str(api_secret) if api_secret is not None else ''
+        self.api_key = str(api_key) if api_key is not None else ""
+        self.api_secret = str(api_secret) if api_secret is not None else ""
 
     def api_query(self, method, options=None):
         """
@@ -49,23 +65,27 @@ class Bittrex(object):
         if not options:
             options = {}
         nonce = str(int(time.time() * 1000))
-        method_set = 'public'
+        method_set = "public"
 
         if method in MARKET_SET:
-            method_set = 'market'
+            method_set = "market"
         elif method in ACCOUNT_SET:
-            method_set = 'account'
+            method_set = "account"
 
-        request_url = (BASE_URL % method_set) + method + '?'
+        request_url = (BASE_URL % method_set) + method + "?"
 
-        if method_set != 'public':
-            request_url += 'apikey=' + self.api_key + "&nonce=" + nonce + '&'
+        if method_set != "public":
+            request_url += "apikey=" + self.api_key + "&nonce=" + nonce + "&"
 
         request_url += urlencode(options)
 
         return requests.get(
             request_url,
-            headers={"apisign": hmac.new(self.api_secret.encode(), request_url.encode(), hashlib.sha512).hexdigest()}
+            headers={
+                "apisign": hmac.new(
+                    self.api_secret.encode(), request_url.encode(), hashlib.sha512
+                ).hexdigest()
+            },
         ).json()
 
     def get_markets(self):
@@ -75,7 +95,7 @@ class Bittrex(object):
         :return: Available market info in JSON
         :rtype : dict
         """
-        return self.api_query('getmarkets')
+        return self.api_query("getmarkets")
 
     def get_currencies(self):
         """
@@ -84,7 +104,7 @@ class Bittrex(object):
         :return: Supported currencies info in JSON
         :rtype : dict
         """
-        return self.api_query('getcurrencies')
+        return self.api_query("getcurrencies")
 
     def get_ticker(self, market):
         """
@@ -94,7 +114,7 @@ class Bittrex(object):
         :return: Current values for given market in JSON
         :rtype : dict
         """
-        return self.api_query('getticker', {'market': market})
+        return self.api_query("getticker", {"market": market})
 
     def get_market_summary(self, market):
         """
@@ -102,7 +122,7 @@ class Bittrex(object):
         :return: Summary of one coin in JSON
         :rtype : dict
         """
-        return self.api_query('getmarketsummary', {'market': market})
+        return self.api_query("getmarketsummary", {"market": market})
 
     def get_market_summaries(self):
         """
@@ -110,7 +130,7 @@ class Bittrex(object):
         :return: Summaries of active exchanges in JSON
         :rtype : dict
         """
-        return self.api_query('getmarketsummaries')
+        return self.api_query("getmarketsummaries")
 
     def get_orderbook(self, market, depth_type, depth=20):
         """
@@ -125,7 +145,9 @@ class Bittrex(object):
         :return: Orderbook of market in JSON
         :rtype : dict
         """
-        return self.api_query('getorderbook', {'market': market, 'type': depth_type, 'depth': depth})
+        return self.api_query(
+            "getorderbook", {"market": market, "type": depth_type, "depth": depth}
+        )
 
     def get_market_history(self, market, count):
         """
@@ -139,7 +161,7 @@ class Bittrex(object):
         :return: Market history in JSON
         :rtype : dict
         """
-        return self.api_query('getmarkethistory', {'market': market, 'count': count})
+        return self.api_query("getmarkethistory", {"market": market, "count": count})
 
     def buy_market(self, market, quantity):
         """
@@ -157,7 +179,7 @@ class Bittrex(object):
         :return:
         :rtype : dict
         """
-        return self.api_query('buymarket', {'market': market, 'quantity': quantity})
+        return self.api_query("buymarket", {"market": market, "quantity": quantity})
 
     def buy_limit(self, market, quantity, rate):
         """
@@ -175,7 +197,9 @@ class Bittrex(object):
         :return:
         :rtype : dict
         """
-        return self.api_query('buylimit', {'market': market, 'quantity': quantity, 'rate': rate})
+        return self.api_query(
+            "buylimit", {"market": market, "quantity": quantity, "rate": rate}
+        )
 
     def sell_market(self, market, quantity):
         """
@@ -190,7 +214,7 @@ class Bittrex(object):
         :return:
         :rtype : dict
         """
-        return self.api_query('sellmarket', {'market': market, 'quantity': quantity})
+        return self.api_query("sellmarket", {"market": market, "quantity": quantity})
 
     def sell_limit(self, market, quantity, rate):
         """
@@ -207,7 +231,9 @@ class Bittrex(object):
         :return:
         :rtype : dict
         """
-        return self.api_query('selllimit', {'market': market, 'quantity': quantity, 'rate': rate})
+        return self.api_query(
+            "selllimit", {"market": market, "quantity": quantity, "rate": rate}
+        )
 
     def cancel(self, uuid):
         """
@@ -218,7 +244,7 @@ class Bittrex(object):
         :return:
         :rtype : dict
         """
-        return self.api_query('cancel', {'uuid': uuid})
+        return self.api_query("cancel", {"uuid": uuid})
 
     def get_open_orders(self, market):
         """
@@ -229,10 +255,10 @@ class Bittrex(object):
         :return: Open orders info in JSON
         :rtype : dict
         """
-        return self.api_query('getopenorders', {'market': market})
+        return self.api_query("getopenorders", {"market": market})
 
     def get_order(self, uuid):
-        return self.api_query('getorder', {'uuid': uuid})
+        return self.api_query("getorder", {"uuid": uuid})
 
     def get_balances(self):
         """
@@ -241,7 +267,7 @@ class Bittrex(object):
         :return: Balances info in JSON
         :rtype : dict
         """
-        return self.api_query('getbalances', {})
+        return self.api_query("getbalances", {})
 
     def get_balance(self, currency):
         """
@@ -252,7 +278,7 @@ class Bittrex(object):
         :return: Balance info in JSON
         :rtype : dict
         """
-        return self.api_query('getbalance', {'currency': currency})
+        return self.api_query("getbalance", {"currency": currency})
 
     def get_deposit_address(self, currency):
         """
@@ -263,7 +289,7 @@ class Bittrex(object):
         :return: Address info in JSON
         :rtype : dict
         """
-        return self.api_query('getdepositaddress', {'currency': currency})
+        return self.api_query("getdepositaddress", {"currency": currency})
 
     def withdraw(self, currency, quantity, address):
         """
@@ -278,7 +304,9 @@ class Bittrex(object):
         :return:
         :rtype : dict
         """
-        return self.api_query('withdraw', {'currency': currency, 'quantity': quantity, 'address': address})
+        return self.api_query(
+            "withdraw", {"currency": currency, "quantity": quantity, "address": address}
+        )
 
     def get_order_history(self, market, count):
         """
@@ -291,4 +319,4 @@ class Bittrex(object):
         :return: order history in JSON
         :rtype : dict
         """
-        return self.api_query('getorderhistory', {'market':market, 'count': count})
+        return self.api_query("getorderhistory", {"market": market, "count": count})

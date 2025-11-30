@@ -1,9 +1,76 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Environment variables
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Legacy entries kept for compatibility
 indicators.log
 cryptoalgotrading/funcs.py
 cryptoalgotrading/extra.py
-*.pyc
-.vscode
-*/.vscode
+scripts
+data
+reports
+trades
+parallel.py
+tmp
+
+# Original project specific entries
 figs
 !figs/fig2_xrp.png
 hist-5s
@@ -16,19 +83,16 @@ hist-10m
 !hist-10m/BTC-XRP.csv
 !hist-10s/BTC-DCT.hdf
 !hist-10s/BTC-DGB.csv
-scripts
-data
-reports
-trades
 
+# Development
 .ipynb_checkpoints
 cryptoalgotrading.egg-info
 .eggs
 .coverage
 .coveralls.yml
 *.ipynb
-parallel.py
-tmp
 pypy*
 .pytest_cache
-.idea/
+
+# UV
+uv.lock
